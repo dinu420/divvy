@@ -1,4 +1,4 @@
-import 'package:telephony/telephony.dart';
+import 'package:telephony_fix/telephony.dart';
 
 class SmsService {
   final Telephony telephony = Telephony.instance;
