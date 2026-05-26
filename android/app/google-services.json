@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "202430701870",
+    "project_id": "smart-split-be3dc",
+    "storage_bucket": "smart-split-be3dc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:202430701870:android:12eb05ea82bc0957ef9abf",
+        "android_client_info": {
+          "package_name": "com.example.divvy"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCjLFUNUU_g7yiYZodyFE88ooAEplyz2fU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

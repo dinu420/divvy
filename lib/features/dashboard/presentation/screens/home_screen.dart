@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:telephony_fix/telephony.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../../../core/services/sms_service.dart';
 import '../../../../core/services/sms_parser_service.dart';
 import '../../../expenses/data/models/transaction_model.dart';
+import '../../../../core/services/firebase_test_service.dart';
+import '../../../expenses/data/services/transaction_firestore_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -17,12 +20,15 @@ class _HomeScreenState extends State<HomeScreen> {
   final SmsParserService parserService =
       SmsParserService();
 
+  final FirebaseTestService firebaseTestService = FirebaseTestService();
+  final TransactionFirestoreService firestoreService = TransactionFirestoreService();
   List<TransactionModel> transactions = [];
 
   @override
   void initState() {
     super.initState();
     loadMessages();
+    sendTest();
   }
 
   Future<void> loadMessages() async {
@@ -43,6 +49,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
         if (parsed != null) {
           parsedTransactions.add(parsed);
+
+          await firestoreService.saveTransaction(parsed);
         }
       }
 
@@ -52,37 +60,92 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  void showSplitDialog(int index) {
+    showDialog(
+      context: context,
+       builder: (context) {
+        return AlertDialog(
+          title: const Text("Split Expense"),
+          content: const Text(
+            "Do you want split this expense?",
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                splitExpense(index);
+                Navigator.pop(context);
+              },
+              child: const Text("Split"),
+            ),
+          ],
+        );
+       },
+      );
+  }
+
+  void splitExpense(int index) {
+    final oldTransaction = transactions[index];
+
+    final updatedTransaction = TransactionModel(
+      merchant: oldTransaction.merchant,
+      amount: oldTransaction.amount,
+      rawMessage: oldTransaction.rawMessage,
+      createdAt: oldTransaction.createdAt,
+      isSplit: true,
+      isProcessed: true,
+    );
+
+    setState(() {
+      transactions[index] = updatedTransaction;
+    });
+  }
+
+  void sendTest() {
+    firebaseTestService.sendTestData();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Smart Split"),
       ),
-      body: ListView.builder(
-        itemCount: transactions.length,
-        itemBuilder: (context, index) {
-          final transaction = transactions[index];
+      body: StreamBuilder<QuerySnapshot>(
+        stream: firestoreService.getTransactions(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-          return Card(
-            margin: const EdgeInsets.all(8),
-            child: ListTile(
-              title: Text(transaction.merchant),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text("LKR ${transaction.amount}"),
-                  const SizedBox(height: 4),
-                  Text(
-                    transaction.isProcessed
-                        ? "Processed"
-                        : "Pending",
-                  ),
-                ],
-              ),
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return const Center(child: Text("No data found"));
+          }
+          
+          final docs = snapshot.data!.docs;
+
+          return ListView.builder(
+             itemCount: docs.length,
+             itemBuilder: (context, index) {
+              final data = 
+                  docs[index].data() as Map<String, dynamic>;
+
+          
+          return ListTile(
+            title: Text(data["message"] ?? ""),
+            subtitle: Text(
+              data["timestamp"]?.toString() ?? "",
             ),
           );
-        },
-      ),
-    );
-  }
+        }, 
+      );
+    },
+  ),
+);
+}
 }

@@ -14,4 +14,15 @@ class TransactionModel {
     this.isProcessed = false,
     required this.createdAt,
   });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'merchant': merchant,
+      'amount': amount,
+      'rawMessage': rawMessage,
+      'isSplit': isSplit,
+      'isProcessed': isProcessed,
+      'createdAt': createdAt.toIso8601String(),
+    };
+  }
 }
